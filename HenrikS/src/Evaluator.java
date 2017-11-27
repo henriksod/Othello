@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 
 /**
  * Evaluator class used with Alpha-Beta pruning as heuristic.
@@ -20,7 +21,6 @@ public class Evaluator implements OthelloEvaluator {
                     {-10, -50,1, 1, 1, 1, -50, -10},
                     {100,-10, 5, 5, 5, 5, -10, 100}};
 
-
     /**
      * Board evaluation method.
      * @param position The current board state.
@@ -28,19 +28,22 @@ public class Evaluator implements OthelloEvaluator {
      */
     @Override
     public int evaluate(OthelloPosition position) {
+
         /* Immediate Mobility */
         int mobilityAdvantage = 0;
+        int numWhiteMoves = 0;
+        int numBlackMoves = 0;
 
         if (position.toMove() == true) {
-            int numWhiteMoves = position.getMoves().size();
+            numWhiteMoves = position.getMoves().size();
             position.setMove(false);
-            int numBlackMoves = position.getMoves().size();
+            numBlackMoves = position.getMoves().size();
             position.setMove(true);
             mobilityAdvantage = numWhiteMoves - numBlackMoves;
         } else {
-            int numBlackMoves = position.getMoves().size();
+            numBlackMoves = position.getMoves().size();
             position.setMove(true);
-            int numWhiteMoves = position.getMoves().size();
+            numWhiteMoves = position.getMoves().size();
             position.setMove(false);
             mobilityAdvantage = numWhiteMoves - numBlackMoves;
         }
@@ -80,20 +83,20 @@ public class Evaluator implements OthelloEvaluator {
             }
         }
 
-        /* Weighted Board */
+        /* Weighted Board (Stability) */
         int weightScore = 0;
 
         for (int i = 1; i < position.BOARD_SIZE+1; i++) {
             for (int j = 1; j < position.BOARD_SIZE+1; j++) {
                 if (position.board[i][j] == 'W') {
-                    weightScore += magnitudeBoard[i-1][j-1];
+                    weightScore += magnitudeBoard[i - 1][j - 1];
                 } else if (position.board[i][j] == 'B') {
-                    weightScore -= magnitudeBoard[i-1][j-1];
+                    weightScore -= magnitudeBoard[i - 1][j - 1];
                 }
             }
         }
 
-        /* Killer move */
+        /* Count markers */
         int whiteMarkers = 0;
         int blackMarkers = 0;
         for (int i = 1; i < position.BOARD_SIZE-1; i++) {
@@ -103,12 +106,18 @@ public class Evaluator implements OthelloEvaluator {
             }
         }
 
+        /* Killer move Board Control */
         int boardControl = 0;
         if (whiteMarkers != 0 && blackMarkers == 0)
             boardControl = 1000;
         if (whiteMarkers == 0 && blackMarkers != 0)
             boardControl = -1000;
 
+        /* Killer move Mobility */
+        if (numWhiteMoves != 0 && numBlackMoves == 0)
+            mobilityAdvantage = 1000;
+        if (numWhiteMoves == 0 && numBlackMoves != 0)
+            mobilityAdvantage = -1000;
 
 
         return mobilityAdvantage*20 + potentialAdvantage + boardControl + weightScore;// + cornerControl*100 - XRisk*10 ;
